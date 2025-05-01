@@ -12,60 +12,44 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
+      - name: 🔐 Docker login
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker image for user-service
+      - name: 🐳 Build & Push Docker images
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/user-service:latest ./user-service
           docker push ${{ secrets.DOCKER_USERNAME }}/user-service:latest
 
-      - name: Build Docker image for salle-service
-        run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/salle-service:latest ./salle-service
           docker push ${{ secrets.DOCKER_USERNAME }}/salle-service:latest
 
-      - name: Build Docker image for reservation-service
-        run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/reservation-service:latest ./reservation-service
           docker push ${{ secrets.DOCKER_USERNAME }}/reservation-service:latest
 
-      - name: Set up Kubeconfig from base64
-        run: |
-          echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 --decode > ~/.kube/config
-
-      - name: Set up Kubeconfig
+      - name: 📁 Set up Kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 --decode > ~/.kube/config
 
-
-      - name: Setup Helm
+      - name: 📦 Setup Helm
         uses: azure/setup-helm@v3
 
-      - name: Deploy with Helm for user-service
+      - name: 🚀 Deploy with Helm
         run: |
           helm upgrade --install user-service ./helm/user-service \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/user-service \
-            --set image.tag=latest \
-            --kube-context docker-desktop
+            --set image.tag=latest
 
-      - name: Deploy with Helm for salle-service
-        run: |
           helm upgrade --install salle-service ./helm/salle-service \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/salle-service \
-            --set image.tag=latest \
-            --kube-context docker-desktop
+            --set image.tag=latest
 
-      - name: Deploy with Helm for reservation-service
-        run: |
           helm upgrade --install reservation-service ./helm/reservation-service \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/reservation-service \
-            --set image.tag=latest \
-            --kube-context docker-desktop
+            --set image.tag=latest
