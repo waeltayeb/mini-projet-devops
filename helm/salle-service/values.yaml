@@ -1,0 +1,8 @@
+image:
+  repository: ton_dockerhub/salle-service
+  tag: latest
+
+service:
+  port: 80
+
+containerPort: 5002

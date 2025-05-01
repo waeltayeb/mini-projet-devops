@@ -1,0 +1,11 @@
+replicaCount: 1
+
+image:
+  repository: ton-dockerhub/user-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80
+
+containerPort: 5001

@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:  # SERVICE CORRECTEMENT CONFIGURÉ
+    image: confluentinc/cp-kafka:7.4.0  # <-- Bonne indentation
+    ports:
+      - "9092:9092"
+    environment:  # Toutes les variables Kafka ici
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: reservations
+    ports:
+      - "5432:5432"
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "5001:5001"
+    depends_on:
+      - db
+      - kafka
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/reservations
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  salle-service:
+    build: ./salle-service
+    ports:
+      - "5002:5002"
+    depends_on:
+      - db
+      - kafka
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/reservations
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  reservation-service:
+    build: ./reservation-service
+    ports:
+      - "5003:5003"
+    depends_on:
+      - db
+      - kafka
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/reservations
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
