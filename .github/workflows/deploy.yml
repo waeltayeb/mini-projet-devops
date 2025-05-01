@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout code
@@ -19,54 +21,50 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build & push user-service
-      - name: Build & Push user-service
+      - name: Build Docker image for user-service
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/user-service:latest ./user-service
           docker push ${{ secrets.DOCKER_USERNAME }}/user-service:latest
 
-      # Build & push salle-service
-      - name: Build & Push salle-service
+      - name: Build Docker image for salle-service
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/salle-service:latest ./salle-service
           docker push ${{ secrets.DOCKER_USERNAME }}/salle-service:latest
 
-      # Build & push reservation-service
-      - name: Build & Push reservation-service
+      - name: Build Docker image for reservation-service
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/reservation-service:latest ./reservation-service
           docker push ${{ secrets.DOCKER_USERNAME }}/reservation-service:latest
 
-      - name: Set up kubectl
+      - name: Set up Kubeconfig from base64
+        run: |
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 --decode > ~/.kube/config
+
+      - name: Set up Kubeconfig
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.27.0'
 
-      - name: Set up kubeconfig
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 -d > $HOME/.kube/config
-
-      - name: Set up Helm
+      - name: Setup Helm
         uses: azure/setup-helm@v3
 
-      # Deploy user-service
-      - name: Deploy user-service with Helm
+      - name: Deploy with Helm for user-service
         run: |
           helm upgrade --install user-service ./helm/user-service \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/user-service \
-            --set image.tag=latest
+            --set image.tag=latest \
+            --kube-context docker-desktop
 
-      # Deploy salle-service
-      - name: Deploy salle-service with Helm
+      - name: Deploy with Helm for salle-service
         run: |
           helm upgrade --install salle-service ./helm/salle-service \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/salle-service \
-            --set image.tag=latest
+            --set image.tag=latest \
+            --kube-context docker-desktop
 
-      # Deploy reservation-service
-      - name: Deploy reservation-service with Helm
+      - name: Deploy with Helm for reservation-service
         run: |
           helm upgrade --install reservation-service ./helm/reservation-service \
             --set image.repository=${{ secrets.DOCKER_USERNAME }}/reservation-service \
-            --set image.tag=latest
+            --set image.tag=latest \
+            --kube-context docker-desktop
