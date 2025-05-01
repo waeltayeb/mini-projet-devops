@@ -41,9 +41,10 @@ jobs:
           echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 --decode > ~/.kube/config
 
       - name: Set up Kubeconfig
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.27.0'
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 --decode > ~/.kube/config
+
 
       - name: Setup Helm
         uses: azure/setup-helm@v3
